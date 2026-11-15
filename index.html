@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ลงเวลาทำงาน</title>
+<style>
+  :root { --ink:#16302b; --mut:#5d736e; --bg:#f3f6f4; --card:#fff; --line:#dbe4e0; --go:#0f7b5f; --out:#b4541a; --bad:#b3261e; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Sarabun","Noto Sans Thai",sans-serif; background:var(--bg); color:var(--ink); font-size:16px; }
+  header { padding:14px; text-align:center; }
+  header h1 { margin:0; font-size:20px; }
+  nav { display:flex; gap:6px; padding:0 12px; max-width:520px; margin:auto; }
+  nav button { flex:1; padding:10px 4px; border:1px solid var(--line); background:var(--card); border-radius:10px; font-size:15px; color:var(--mut); }
+  nav button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  main { padding:12px; max-width:520px; margin:auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+  label { display:block; font-size:14px; color:var(--mut); margin:10px 0 4px; }
+  select, input, textarea { width:100%; padding:12px; font-size:16px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); font-family:inherit; }
+  .btn { width:100%; padding:14px; font-size:17px; font-weight:600; border:0; border-radius:12px; color:#fff; background:var(--ink); margin-top:12px; }
+  .btn:disabled { opacity:.5; }
+  .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .row { display:flex; gap:8px; } .row > * { flex:1; }
+  .msg { padding:12px; border-radius:10px; margin-top:12px; font-size:15px; display:none; }
+  .msg.ok { display:block; background:#e2f3ec; color:#0b5a45; }
+  .msg.err { display:block; background:#fbe9e7; color:var(--bad); }
+  #result { text-align:center; padding:28px 14px; border-radius:14px; color:#fff; background:var(--mut); margin-bottom:12px; }
+  #result.in { background:var(--go); } #result.out { background:var(--out); } #result.err { background:var(--bad); }
+  #result .big { font-size:34px; font-weight:700; line-height:1.2; }
+  #result .time { font-size:56px; font-weight:700; font-variant-numeric:tabular-nums; }
+  #result .sub { font-size:16px; opacity:.95; margin-top:6px; }
+  .item { padding:10px 0; border-top:1px solid var(--line); font-size:15px; }
+  .item:first-child { border-top:0; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:99px; font-size:13px; background:#fff3d6; color:#7a5200; }
+  .tag.ok { background:#e2f3ec; color:#0b5a45; } .tag.no { background:#fbe9e7; color:var(--bad); }
+  .mut { color:var(--mut); font-size:14px; }
+  h2 { font-size:16px; margin:0 0 6px; }
+  .hide { display:none; }
+  .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
+</style>
+</head>
+<body>
+<header><h1>ลงเวลาทำงาน</h1></header>
+<nav id="nav" class="hide">
+  <button id="t-punch" class="on" onclick="tab('punch')">ลงเวลา</button>
+  <button id="t-leave" onclick="tab('leave')">ขอลา</button>
+</nav>
+<main>
+  <div id="reg" class="card hide">
+    <h2>ผูกมือถือเครื่องนี้ (ทำครั้งแรกครั้งเดียว)</h2>
+    <div class="mut">หลังผูกแล้ว เครื่องนี้จะลงเวลาได้เฉพาะชื่อนี้เท่านั้น</div>
+    <label>ชื่อพนักงาน</label>
+    <select id="emp"></select>
+    <label>รหัส PIN</label>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off">
+    <button id="regBtn" class="btn" onclick="register()">ผูกเครื่องและลงเวลา</button>
+    <div id="regMsg" class="msg"></div>
+  </div>
+
+  <div id="p-punch" class="hide">
+    <div id="result"><div class="big" id="rBig">กำลังลงเวลา...</div><div class="time" id="rTime"></div><div class="sub" id="rSub"></div></div>
+    <button id="retry" class="btn hide" onclick="punch()">ลองใหม่</button>
+    <div class="card">
+      <h2>วันนี้</h2>
+      <div id="todayList" class="mut">-</div>
+    </div>
+  </div>
+
+  <div id="p-leave" class="hide">
+    <div class="card">
+      <h2>ยื่นคำขอลา</h2>
+      <label>ประเภท</label>
+      <select id="lvType"><option>ลาป่วย</option><option>ลากิจ</option><option>ลาพักร้อน</option><option>อื่นๆ</option></select>
+      <div class="row">
+        <div><label>ตั้งแต่</label><input id="lvFrom" type="date"></div>
+        <div><label>ถึง</label><input id="lvTo" type="date"></div>
+      </div>
+      <label>เหตุผล</label>
+      <textarea id="lvReason" rows="2" maxlength="300"></textarea>
+      <button id="lvBtn" class="btn" onclick="sendLeave()">ส่งคำขอลา</button>
+      <div id="lvMsg" class="msg"></div>
+    </div>
+    <div class="card">
+      <h2>คำขอลาของฉัน</h2>
+      <div id="myLeaves" class="mut">ยังไม่มีรายการ</div>
+    </div>
+  </div>
+
+  <button class="link" onclick="document.getElementById('owner').classList.toggle('hide')">สำหรับเจ้าของ</button>
+  <div id="owner" class="card hide">
+    <h2>ตั้งจุดลงเวลา</h2>
+    <div class="mut">ยืนตรงจุดที่ติด QR ใส่รหัสเจ้าของ แล้วกดปุ่ม</div>
+    <label>รหัสเจ้าของ</label>
+    <input id="apin" type="password" inputmode="numeric" autocomplete="off">
+    <button class="btn ghost" onclick="setLoc()">ใช้ตำแหน่งปัจจุบันเป็นจุดลงเวลา</button>
+    <div id="locMsg" class="msg"></div>
+  </div>
+</main>
+
+<script>
+  var API = 'https://script.google.com/macros/s/AKfycbxT0yrsyy-yr5_u-gAmmsLUSrHc2fHdj1ue1vAx5YEX-F69Ue6paM9NxgMktqgxZhMfZA/exec';
+  var mem = {};
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function show(id, on) { $(id).classList.toggle('hide', !on); }
+  function msg(id, text, ok) { var e = $(id); e.textContent = text; e.className = 'msg ' + (text ? (ok ? 'ok' : 'err') : ''); }
+  function store(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); mem[k] = v; return v; }
+    catch (e) { if (v === undefined) return mem[k] || null; mem[k] = v; return v; }
+  }
+  function token() {
+    var t = store('dev_token');
+    if (!t) {
+      var a = new Uint8Array(24); crypto.getRandomValues(a);
+      t = Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      store('dev_token', t);
+    }
+    return t;
+  }
+  function post(body) {
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json(); });
+  }
+  function api(body) {
+    return post(body).catch(function () { return post(body); }).then(function (j) {
+      if (!j.ok) throw new Error(j.error || 'เกิดข้อผิดพลาด');
+      return j.data;
+    }, function () { throw new Error('เชื่อมต่อไม่ได้ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่'); });
+  }
+  function getPos() {
+    return new Promise(function (ok) {
+      if (!navigator.geolocation) return ok(null);
+      navigator.geolocation.getCurrentPosition(function (p) { ok(p.coords); }, function () { ok(null); },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+    });
+  }
+  function tab(name) {
+    ['punch', 'leave'].forEach(function (t) { $('t-' + t).classList.toggle('on', t === name); show('p-' + t, t === name); });
+  }
+  function setResult(cls, big, time, sub) {
+    $('result').className = cls; $('rBig').textContent = big; $('rTime').textContent = time || ''; $('rSub').textContent = sub || '';
+  }
+
+  function showRegister() {
+    show('nav', false); show('p-punch', false); show('p-leave', false); show('reg', true);
+    api({ action: 'names' }).then(function (list) {
+      $('emp').innerHTML = list.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('');
+    }).catch(function (e) { msg('regMsg', e.message); });
+  }
+  function register() {
+    var name = $('emp').value, pin = $('pin').value.trim();
+    if (!name || !pin) return msg('regMsg', 'กรุณาเลือกชื่อและใส่ PIN');
+    $('regBtn').disabled = true; msg('regMsg', 'กำลังผูกเครื่อง...', true);
+    api({ action: 'register', token: token(), name: name, pin: pin }).then(function () {
+      store('dev_ok', '1'); $('regBtn').disabled = false; msg('regMsg', ''); start();
+    }).catch(function (e) { $('regBtn').disabled = false; msg('regMsg', e.message); });
+  }
+
+  function start() { show('reg', false); show('nav', true); tab('punch'); punch(); }
+  function punch() {
+    show('retry', false);
+    setResult('', 'กำลังลงเวลา...', '', 'กำลังหาตำแหน่ง GPS');
+    getPos().then(function (c) {
+      var b = { action: 'punch', token: token() };
+      if (c) { b.lat = c.latitude; b.lng = c.longitude; }
+      return api(b);
+    }).then(function (r) {
+      setResult(r.type === 'เข้า' ? 'in' : 'out', r.type + 'งาน', r.time,
+        r.name + (r.dup ? ' · บันทึกไว้แล้วเมื่อสักครู่ ไม่บันทึกซ้ำ' : ' · บันทึกแล้ว'));
+      refresh();
+    }).catch(function (e) {
+      if (e.message === 'NOT_REGISTERED') { store('dev_ok', ''); return showRegister(); }
+      setResult('err', 'ลงเวลาไม่สำเร็จ', '', e.message); show('retry', true);
+    });
+  }
+  function statusTag(st) { var c = st === 'อนุมัติ' ? 'ok' : st === 'ไม่อนุมัติ' ? 'no' : ''; return '<span class="tag ' + c + '">' + esc(st) + '</span>'; }
+  function refresh() {
+    api({ action: 'status', token: token() }).then(function (s) {
+      $('todayList').innerHTML = s.punches.length ? s.punches.map(function (p) {
+        return '<div class="item">' + esc(p.type) + 'งาน <b>' + esc(p.time) + '</b></div>';
+      }).join('') : 'ยังไม่มีการลงเวลา';
+      $('myLeaves').innerHTML = s.leaves.length ? s.leaves.map(function (l) {
+        return '<div class="item"><b>' + esc(l.type) + '</b> ' + statusTag(l.status) + '<br>' + esc(l.from) +
+          (l.to !== l.from ? ' ถึง ' + esc(l.to) : '') + ' (' + l.days + ' วัน)' +
+          (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
+      }).join('') : 'ยังไม่มีรายการ';
+    }).catch(function () {});
+  }
+  function sendLeave() {
+    var f = $('lvFrom').value, t = $('lvTo').value || f;
+    if (!f) return msg('lvMsg', 'กรุณาเลือกวันที่ลา');
+    $('lvBtn').disabled = true; msg('lvMsg', 'กำลังส่ง...', true);
+    api({ action: 'leave', token: token(), type: $('lvType').value, from: f, to: t, reason: $('lvReason').value }).then(function (r) {
+      $('lvBtn').disabled = false; msg('lvMsg', 'ส่งคำขอลาแล้ว (' + r.days + ' วัน) รอเจ้าของอนุมัติ', true);
+      $('lvFrom').value = ''; $('lvTo').value = ''; $('lvReason').value = ''; refresh();
+    }).catch(function (e) { $('lvBtn').disabled = false; msg('lvMsg', e.message); });
+  }
+  function setLoc() {
+    var p = $('apin').value.trim();
+    if (!p) return msg('locMsg', 'กรุณาใส่รหัสเจ้าของ');
+    msg('locMsg', 'กำลังหาตำแหน่ง...', true);
+    getPos().then(function (c) {
+      if (!c) throw new Error('หาตำแหน่งไม่ได้ กรุณาอนุญาตการเข้าถึงตำแหน่ง (GPS) แล้วลองใหม่');
+      return api({ action: 'setLocation', adminPin: p, lat: c.latitude, lng: c.longitude }).then(function () {
+        msg('locMsg', 'บันทึกจุดลงเวลาแล้ว (ความแม่นยำ GPS ประมาณ ' + Math.round(c.accuracy) + ' ม.)', true);
+      });
+    }).catch(function (e) { msg('locMsg', e.message); });
+  }
+
+  if (store('dev_ok') === '1') start(); else showRegister();
+</script>
+</body>
+</html>
