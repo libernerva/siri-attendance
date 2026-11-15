@@ -37,6 +37,11 @@
   .mut { color:var(--mut); font-size:14px; }
   h2 { font-size:16px; margin:0 0 6px; }
   .hide { display:none; }
+  .notice { border-radius:14px; padding:14px 16px; margin-bottom:12px; font-size:16px; border:2px solid; }
+  .notice.ok { background:#e2f3ec; color:#0b5a45; border-color:#0f7b5f; }
+  .notice.no { background:#fbe9e7; color:var(--bad); border-color:var(--bad); }
+  .notice b { display:block; font-size:18px; margin-bottom:2px; }
+  .notice button { margin-top:8px; background:none; border:1px solid currentColor; color:inherit; border-radius:8px; padding:6px 14px; font-size:14px; }
   .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
 </style>
 </head>
@@ -47,6 +52,7 @@
   <button id="t-leave" onclick="tab('leave')">ขอลา</button>
 </nav>
 <main>
+  <div id="notices"></div>
   <div id="reg" class="card hide">
     <h2>ผูกมือถือเครื่องนี้ (ทำครั้งแรกครั้งเดียว)</h2>
     <div class="mut">หลังผูกแล้ว เครื่องนี้จะลงเวลาได้เฉพาะชื่อนี้เท่านั้น</div>
@@ -185,8 +191,28 @@
           (l.to !== l.from ? ' ถึง ' + esc(l.to) : '') + ' (' + l.days + ' วัน)' +
           (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
       }).join('') : 'ยังไม่มีรายการ';
+      showDecisions(s.leaves);
     }).catch(function () {});
   }
+  function seenList() { try { return JSON.parse(store('seen_dec') || '[]'); } catch (e) { return []; } }
+  function showDecisions(leaves) {
+    var seen = seenList();
+    var fresh = leaves.filter(function (l) { return l.status !== 'รออนุมัติ' && seen.indexOf(l.id) < 0; });
+    $('notices').innerHTML = fresh.map(function (l) {
+      var ok = l.status === 'อนุมัติ';
+      return '<div class="notice ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? '✓ การลาได้รับการอนุมัติ' : '✕ การลาไม่ได้รับการอนุมัติ') + '</b>' +
+        esc(l.type) + ' ' + esc(l.from) + (l.to !== l.from ? ' ถึง ' + esc(l.to) : '') + ' (' + l.days + ' วัน)' +
+        (l.note ? '<br>หมายเหตุ: ' + esc(l.note) : '') +
+        '<br><button data-seen="' + esc(l.id) + '">รับทราบ</button></div>';
+    }).join('');
+    if (fresh.length && navigator.vibrate) { try { navigator.vibrate([150, 80, 150]); } catch (e) {} }
+  }
+  document.addEventListener('click', function (ev) {
+    var id = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-seen');
+    if (!id) return;
+    var seen = seenList(); seen.push(id); store('seen_dec', JSON.stringify(seen.slice(-50)));
+    ev.target.parentNode.remove();
+  });
   function sendLeave() {
     var f = $('lvFrom').value, t = $('lvTo').value || f;
     if (!f) return msg('lvMsg', 'กรุณาเลือกวันที่ลา');
