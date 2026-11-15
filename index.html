@@ -14,6 +14,13 @@
   nav { display:flex; gap:6px; padding:0 12px; max-width:520px; margin:auto; }
   nav button { flex:1; padding:10px 4px; border:1px solid var(--line); background:var(--card); border-radius:10px; font-size:15px; color:var(--mut); }
   nav button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  #t-punch { color:var(--go); border-color:var(--go); background:#e2f3ec; font-weight:600; }
+  #t-punch.on { background:var(--go); color:#fff; }
+  #t-leave { color:#1d5fa8; border-color:#1d5fa8; background:#e6effa; font-weight:600; }
+  #t-leave.on { background:#1d5fa8; color:#fff; }
+  .team { display:grid; grid-template-columns:1fr 1fr; gap:4px 14px; font-size:13px; }
+  .team span { display:flex; justify-content:space-between; border-bottom:1px dotted var(--line); padding:3px 0; }
+  .team b { font-variant-numeric:tabular-nums; }
   main { padding:12px; max-width:520px; margin:auto; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
   label { display:block; font-size:14px; color:var(--mut); margin:10px 0 4px; }
@@ -110,6 +117,11 @@
       <h2>ประวัติการลาที่อนุมัติแล้ว</h2>
       <div id="leaveTotals"></div>
       <div id="leaveHistory" class="mut">ยังไม่มีการลาที่อนุมัติ</div>
+    </div>
+    <div class="card">
+      <h2 id="teamTitle">วันลาของพนักงานทุกคน (ปีนี้)</h2>
+      <div id="teamList" class="team mut">-</div>
+      <div class="mut" style="font-size:12px;margin-top:6px">นับเฉพาะที่อนุมัติแล้ว ไม่รวมลาป่วยที่มีใบรับรองแพทย์</div>
     </div>
   </div>
 
@@ -213,6 +225,7 @@
       }).join('') : 'ยังไม่มีรายการ';
       showDecisions(s.leaves);
       renderHistory(s.approved || []);
+      renderTeam(s.team || []);
     }).catch(function () {});
   }
   var TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -250,6 +263,12 @@
         (l.to !== l.from ? ' ถึง ' + esc(thd(l.to)) : '') +
         (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
     }).join('') : 'ยังไม่มีการลาที่อนุมัติ';
+  }
+  function renderTeam(list) {
+    $('teamTitle').textContent = 'วันลาของพนักงานทุกคน (ปี ' + (new Date().getFullYear() + 543) + ')';
+    $('teamList').innerHTML = list.length ? list.map(function (t) {
+      return '<span>' + esc(t.name) + ' <b>' + fmtDays(t.days) + '</b></span>';
+    }).join('') : '-';
   }
   function seenList() { try { return JSON.parse(store('seen_dec') || '[]'); } catch (e) { return []; } }
   function showDecisions(leaves) {
