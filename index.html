@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>ลงเวลาทำงาน</title>
+<title>เข้าและออกงาน บ. ศิริชัยแทรคเตอร์</title>
 <style>
   :root { --ink:#16302b; --mut:#5d736e; --bg:#f3f6f4; --card:#fff; --line:#dbe4e0; --go:#0f7b5f; --out:#b4541a; --bad:#b3261e; }
   * { box-sizing:border-box; }
@@ -46,11 +46,12 @@
   .tot .big { font-size:28px; font-weight:700; color:var(--go); }
   .tot .grid { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--mut); }
   .tot .grid b { color:var(--ink); }
+  .note { font-size:13px; color:var(--bad); margin-top:6px; line-height:1.5; }
   .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
 </style>
 </head>
 <body>
-<header><h1>ลงเวลาทำงาน</h1></header>
+<header><h1>เข้าและออกงาน บ. ศิริชัยแทรคเตอร์</h1></header>
 <nav id="nav" class="hide">
   <button id="t-punch" class="on" onclick="tab('punch')">ลงเวลา</button>
   <button id="t-leave" onclick="tab('leave')">ขอลา</button>
@@ -90,6 +91,7 @@
       </div>
       <label>เหตุผล</label>
       <textarea id="lvReason" rows="2" maxlength="300"></textarea>
+      <div class="note">* ลาป่วยจะไม่นับเป็นการลา แต่ต้องยื่นใบรับรองแพทย์ทุกครั้ง มิฉะนั้นจะนับเป็นการลาปกติ</div>
       <button id="lvBtn" class="btn" onclick="sendLeave()">ส่งคำขอลา</button>
       <div id="lvMsg" class="msg"></div>
     </div>
