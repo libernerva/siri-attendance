@@ -214,15 +214,21 @@
     return m ? (+m[3]) + ' ' + TH_MON[+m[2] - 1] + ' ' + String(+m[1] + 543).slice(-2) : String(s || '');
   }
   function fmtDays(n) { n = Math.round(n * 10) / 10; return (n % 1 ? n.toFixed(1) : String(n)); }
+  function certTag(l) {
+    if (l.type !== 'ลาป่วย') return '';
+    return l.cert ? ' <span class="tag ok">มีใบรับรองแพทย์ · ไม่นับวันลา</span>' : ' <span class="tag no">ไม่มีใบรับรองแพทย์ · นับเป็นวันลา</span>';
+  }
   function renderHistory(list) {
     var year = String(new Date().getFullYear());
     var types = ['ลาป่วย', 'ลากิจ', 'ลาพักร้อน', 'อื่นๆ'];
-    var byType = {}, yearTotal = 0, allTotal = 0;
+    var byType = {}, yearTotal = 0, allTotal = 0, certYear = 0;
     types.forEach(function (t) { byType[t] = 0; });
     list.forEach(function (l) {
       var d = Number(l.days) || 0;
+      var inYear = String(l.from).slice(0, 4) === year;
+      if (l.type === 'ลาป่วย' && l.cert) { if (inYear) certYear += d; return; }
       allTotal += d;
-      if (String(l.from).slice(0, 4) === year) {
+      if (inYear) {
         yearTotal += d;
         byType[l.type] = (byType[l.type] || 0) + d;
       }
@@ -230,9 +236,10 @@
     $('leaveTotals').innerHTML = '<div class="tot"><div>ปีนี้ (' + (+year + 543) + ') ลาไปแล้ว</div>' +
       '<div class="big">' + fmtDays(yearTotal) + ' วัน</div><div class="grid">' +
       Object.keys(byType).map(function (t) { return '<span>' + esc(t) + ' <b>' + fmtDays(byType[t]) + '</b></span>'; }).join('') +
-      '</div>' + (allTotal !== yearTotal ? '<div class="mut" style="margin-top:6px">รวมทุกปี ' + fmtDays(allTotal) + ' วัน</div>' : '') + '</div>';
+      '</div>' + (certYear ? '<div class="mut" style="margin-top:6px">ลาป่วยมีใบรับรองแพทย์ ' + fmtDays(certYear) + ' วัน (ไม่นับเป็นวันลา)</div>' : '') +
+      (allTotal !== yearTotal ? '<div class="mut" style="margin-top:6px">รวมทุกปี ' + fmtDays(allTotal) + ' วัน</div>' : '') + '</div>';
     $('leaveHistory').innerHTML = list.length ? list.map(function (l) {
-      return '<div class="item"><b>' + esc(l.type) + '</b> · ' + fmtDays(l.days) + ' วัน<br>' + esc(thd(l.from)) +
+      return '<div class="item"><b>' + esc(l.type) + '</b> · ' + fmtDays(l.days) + ' วัน' + certTag(l) + '<br>' + esc(thd(l.from)) +
         (l.to !== l.from ? ' ถึง ' + esc(thd(l.to)) : '') +
         (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
     }).join('') : 'ยังไม่มีการลาที่อนุมัติ';
