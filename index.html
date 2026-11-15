@@ -42,6 +42,10 @@
   .notice.no { background:#fbe9e7; color:var(--bad); border-color:var(--bad); }
   .notice b { display:block; font-size:18px; margin-bottom:2px; }
   .notice button { margin-top:8px; background:none; border:1px solid currentColor; color:inherit; border-radius:8px; padding:6px 14px; font-size:14px; }
+  .tot { background:#eef6f2; border-radius:12px; padding:12px; margin-bottom:8px; }
+  .tot .big { font-size:28px; font-weight:700; color:var(--go); }
+  .tot .grid { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--mut); }
+  .tot .grid b { color:var(--ink); }
   .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
 </style>
 </head>
@@ -90,8 +94,13 @@
       <div id="lvMsg" class="msg"></div>
     </div>
     <div class="card">
-      <h2>คำขอลาของฉัน</h2>
+      <h2>คำขอลาล่าสุด</h2>
       <div id="myLeaves" class="mut">ยังไม่มีรายการ</div>
+    </div>
+    <div class="card">
+      <h2>ประวัติการลาที่อนุมัติแล้ว</h2>
+      <div id="leaveTotals"></div>
+      <div id="leaveHistory" class="mut">ยังไม่มีการลาที่อนุมัติ</div>
     </div>
   </div>
 
@@ -189,12 +198,42 @@
         return '<div class="item">' + esc(p.type) + 'งาน <b>' + esc(p.time) + '</b></div>';
       }).join('') : 'ยังไม่มีการลงเวลา';
       $('myLeaves').innerHTML = s.leaves.length ? s.leaves.map(function (l) {
-        return '<div class="item"><b>' + esc(l.type) + '</b> ' + statusTag(l.status) + '<br>' + esc(l.from) +
-          (l.to !== l.from ? ' ถึง ' + esc(l.to) : '') + ' (' + l.days + ' วัน)' +
+        return '<div class="item"><b>' + esc(l.type) + '</b> ' + statusTag(l.status) + '<br>' + esc(thd(l.from)) +
+          (l.to !== l.from ? ' ถึง ' + esc(thd(l.to)) : '') + ' (' + l.days + ' วัน)' +
           (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
       }).join('') : 'ยังไม่มีรายการ';
       showDecisions(s.leaves);
+      renderHistory(s.approved || []);
     }).catch(function () {});
+  }
+  var TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  function thd(s) {
+    var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? (+m[3]) + ' ' + TH_MON[+m[2] - 1] + ' ' + String(+m[1] + 543).slice(-2) : String(s || '');
+  }
+  function fmtDays(n) { n = Math.round(n * 10) / 10; return (n % 1 ? n.toFixed(1) : String(n)); }
+  function renderHistory(list) {
+    var year = String(new Date().getFullYear());
+    var types = ['ลาป่วย', 'ลากิจ', 'ลาพักร้อน', 'อื่นๆ'];
+    var byType = {}, yearTotal = 0, allTotal = 0;
+    types.forEach(function (t) { byType[t] = 0; });
+    list.forEach(function (l) {
+      var d = Number(l.days) || 0;
+      allTotal += d;
+      if (String(l.from).slice(0, 4) === year) {
+        yearTotal += d;
+        byType[l.type] = (byType[l.type] || 0) + d;
+      }
+    });
+    $('leaveTotals').innerHTML = '<div class="tot"><div>ปีนี้ (' + (+year + 543) + ') ลาไปแล้ว</div>' +
+      '<div class="big">' + fmtDays(yearTotal) + ' วัน</div><div class="grid">' +
+      Object.keys(byType).map(function (t) { return '<span>' + esc(t) + ' <b>' + fmtDays(byType[t]) + '</b></span>'; }).join('') +
+      '</div>' + (allTotal !== yearTotal ? '<div class="mut" style="margin-top:6px">รวมทุกปี ' + fmtDays(allTotal) + ' วัน</div>' : '') + '</div>';
+    $('leaveHistory').innerHTML = list.length ? list.map(function (l) {
+      return '<div class="item"><b>' + esc(l.type) + '</b> · ' + fmtDays(l.days) + ' วัน<br>' + esc(thd(l.from)) +
+        (l.to !== l.from ? ' ถึง ' + esc(thd(l.to)) : '') +
+        (l.reason ? '<br><span class="mut">' + esc(l.reason) + '</span>' : '') + '</div>';
+    }).join('') : 'ยังไม่มีการลาที่อนุมัติ';
   }
   function seenList() { try { return JSON.parse(store('seen_dec') || '[]'); } catch (e) { return []; } }
   function showDecisions(leaves) {
@@ -203,7 +242,7 @@
     $('notices').innerHTML = fresh.map(function (l) {
       var ok = l.status === 'อนุมัติ';
       return '<div class="notice ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? '✓ การลาได้รับการอนุมัติ' : '✕ การลาไม่ได้รับการอนุมัติ') + '</b>' +
-        esc(l.type) + ' ' + esc(l.from) + (l.to !== l.from ? ' ถึง ' + esc(l.to) : '') + ' (' + l.days + ' วัน)' +
+        esc(l.type) + ' ' + esc(thd(l.from)) + (l.to !== l.from ? ' ถึง ' + esc(thd(l.to)) : '') + ' (' + l.days + ' วัน)' +
         (l.note ? '<br>หมายเหตุ: ' + esc(l.note) : '') +
         '<br><button data-seen="' + esc(l.id) + '">รับทราบ</button></div>';
     }).join('');
