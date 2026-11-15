@@ -78,9 +78,11 @@
       <h2>ยื่นคำขอลา</h2>
       <label>ประเภท</label>
       <select id="lvType"><option>ลาป่วย</option><option>ลากิจ</option><option>ลาพักร้อน</option><option>อื่นๆ</option></select>
+      <label>ระยะเวลา</label>
+      <select id="lvDur" onchange="durChange()"><option value="full">เต็มวัน (นับวันละ 1 วัน)</option><option value="half">ครึ่งวัน (นับ 0.5 วัน)</option></select>
       <div class="row">
-        <div><label>ตั้งแต่</label><input id="lvFrom" type="date"></div>
-        <div><label>ถึง</label><input id="lvTo" type="date"></div>
+        <div><label id="lvFromLbl">ตั้งแต่</label><input id="lvFrom" type="date"></div>
+        <div id="lvToWrap"><label>ถึง</label><input id="lvTo" type="date"></div>
       </div>
       <label>เหตุผล</label>
       <textarea id="lvReason" rows="2" maxlength="300"></textarea>
@@ -213,13 +215,19 @@
     var seen = seenList(); seen.push(id); store('seen_dec', JSON.stringify(seen.slice(-50)));
     ev.target.parentNode.remove();
   });
+  function durChange() {
+    var half = $('lvDur').value === 'half';
+    show('lvToWrap', !half);
+    $('lvFromLbl').textContent = half ? 'วันที่ลา' : 'ตั้งแต่';
+  }
   function sendLeave() {
-    var f = $('lvFrom').value, t = $('lvTo').value || f;
+    var half = $('lvDur').value === 'half';
+    var f = $('lvFrom').value, t = half ? f : ($('lvTo').value || f);
     if (!f) return msg('lvMsg', 'กรุณาเลือกวันที่ลา');
     $('lvBtn').disabled = true; msg('lvMsg', 'กำลังส่ง...', true);
-    api({ action: 'leave', token: token(), type: $('lvType').value, from: f, to: t, reason: $('lvReason').value }).then(function (r) {
+    api({ action: 'leave', token: token(), type: $('lvType').value, from: f, to: t, reason: $('lvReason').value, half: half }).then(function (r) {
       $('lvBtn').disabled = false; msg('lvMsg', 'ส่งคำขอลาแล้ว (' + r.days + ' วัน) รอเจ้าของอนุมัติ', true);
-      $('lvFrom').value = ''; $('lvTo').value = ''; $('lvReason').value = ''; refresh();
+      $('lvFrom').value = ''; $('lvTo').value = ''; $('lvReason').value = ''; $('lvDur').value = 'full'; durChange(); refresh();
     }).catch(function (e) { $('lvBtn').disabled = false; msg('lvMsg', e.message); });
   }
   function setLoc() {
