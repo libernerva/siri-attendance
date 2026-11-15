@@ -46,6 +46,7 @@
   .tot .big { font-size:28px; font-weight:700; color:var(--go); }
   .tot .grid { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:6px; font-size:14px; color:var(--mut); }
   .tot .grid b { color:var(--ink); }
+  .tot .plus { font-size:15px; font-weight:600; color:var(--mut); }
   .note { font-size:13px; color:var(--bad); margin-top:6px; line-height:1.5; }
   .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
 </style>
@@ -234,9 +235,9 @@
       }
     });
     $('leaveTotals').innerHTML = '<div class="tot"><div>ปีนี้ (' + (+year + 543) + ') ลาไปแล้ว</div>' +
-      '<div class="big">' + fmtDays(yearTotal) + ' วัน</div><div class="grid">' +
+      '<div class="big">' + fmtDays(yearTotal) + ' วัน' + (certYear ? ' <span class="plus">(+' + fmtDays(certYear) + ' ลาป่วยมีใบรับรองแพทย์)</span>' : '') + '</div><div class="grid">' +
       Object.keys(byType).map(function (t) { return '<span>' + esc(t) + ' <b>' + fmtDays(byType[t]) + '</b></span>'; }).join('') +
-      '</div>' + (certYear ? '<div class="mut" style="margin-top:6px">ลาป่วยมีใบรับรองแพทย์ ' + fmtDays(certYear) + ' วัน (ไม่นับเป็นวันลา)</div>' : '') +
+      '</div>' +
       (allTotal !== yearTotal ? '<div class="mut" style="margin-top:6px">รวมทุกปี ' + fmtDays(allTotal) + ' วัน</div>' : '') + '</div>';
     $('leaveHistory').innerHTML = list.length ? list.map(function (l) {
       return '<div class="item"><b>' + esc(l.type) + '</b> · ' + fmtDays(l.days) + ' วัน' + certTag(l) + '<br>' + esc(thd(l.from)) +
