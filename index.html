@@ -49,6 +49,10 @@
   .tot .plus { font-size:15px; font-weight:600; color:var(--mut); }
   .note { font-size:13px; color:var(--bad); margin-top:6px; line-height:1.5; }
   .link { background:none; border:0; color:var(--mut); font-size:13px; text-decoration:underline; padding:8px; display:block; margin:8px auto; }
+  .pop { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:20px; z-index:9; }
+  .pop .box { background:#fff; border-radius:16px; padding:18px; max-width:420px; width:100%; }
+  .pop .box h3 { margin:0 0 8px; font-size:18px; color:#7a5200; }
+  .pop .box .item { font-size:15px; }
 </style>
 </head>
 <body>
@@ -59,6 +63,7 @@
 </nav>
 <main>
   <div id="notices"></div>
+  <div id="pop" class="pop hide"><div class="box"><h3>วันลาตรงกับพนักงานคนอื่น</h3><div id="popList"></div><div class="mut" style="margin-top:10px">คำขอลาของคุณส่งแล้ว ไม่ต้องทำอะไรเพิ่ม กรุณารอผลอนุมัติจากเจ้าของ</div><button class="btn" onclick="show('pop', false)">รับทราบ</button></div></div>
   <div id="reg" class="card hide">
     <h2>ผูกมือถือเครื่องนี้ (ทำครั้งแรกครั้งเดียว)</h2>
     <div class="mut">หลังผูกแล้ว เครื่องนี้จะลงเวลาได้เฉพาะชื่อนี้เท่านั้น</div>
@@ -276,6 +281,12 @@
     $('lvBtn').disabled = true; msg('lvMsg', 'กำลังส่ง...', true);
     api({ action: 'leave', token: token(), type: $('lvType').value, from: f, to: t, reason: $('lvReason').value, half: half }).then(function (r) {
       $('lvBtn').disabled = false; msg('lvMsg', 'ส่งคำขอลาแล้ว (' + r.days + ' วัน) รอเจ้าของอนุมัติ', true);
+      if (r.conflicts && r.conflicts.length) {
+        $('popList').innerHTML = r.conflicts.map(function (c) {
+          return '<div class="item"><b>' + esc(c.name) + '</b> · ' + esc(c.type) + '<br>' + esc(thd(c.from)) + (c.to !== c.from ? ' ถึง ' + esc(thd(c.to)) : '') + ' ' + statusTag(c.status) + '</div>';
+        }).join('');
+        show('pop', true);
+      }
       $('lvFrom').value = ''; $('lvTo').value = ''; $('lvReason').value = ''; $('lvDur').value = 'full'; durChange(); refresh();
     }).catch(function (e) { $('lvBtn').disabled = false; msg('lvMsg', e.message); });
   }
